@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// For development in this sandbox, we use sqlite.
+// For production, you can switch this to "postgresql" and set the DATABASE_URL environment variable.
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teams     TeamMember[]
+  boards    Board[]      @relation("BoardOwner")
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members   TeamMember[]
+  boards    Board[]
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  userId    String
+  teamId    String
+  role      String   @default("MEMBER") // OWNER, ADMIN, MEMBER
+
+  user      User     @relation(fields: [userId], references: [id])
+  team      Team     @relation(fields: [teamId], references: [id])
+
+  @@unique([userId, teamId])
+}
+
+model Board {
+  id        String   @id @default(cuid())
+  name      String
+  teamId    String?
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team      Team?          @relation(fields: [teamId], references: [id])
+  owner     User           @relation("BoardOwner", fields: [ownerId], references: [id])
+  elements  BoardElement[]
+}
+
+model BoardElement {
+  id        String   @id @default(cuid())
+  boardId   String
+  type      String   // RECT, CIRCLE, etc.
+  x         Float
+  y         Float
+  width     Float?
+  height    Float?
+  fill      String?
+  content   String?  // For text
+
+  board     Board    @relation(fields: [boardId], references: [id])
+}
