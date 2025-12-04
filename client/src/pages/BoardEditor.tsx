@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import { Stage, Layer, Rect, Circle, Text } from 'react-konva';
+import { useParams, Link } from 'react-router-dom';
+import { Stage, Layer, Rect, Circle } from 'react-konva';
 import { io, Socket } from 'socket.io-client';
 import api from '../api';
 
@@ -20,7 +20,7 @@ interface BoardElement {
 const BoardEditor: React.FC = () => {
   const { id: boardId } = useParams<{ id: string }>();
   const [elements, setElements] = useState<BoardElement[]>([]);
-  const [selectedTool, setSelectedTool] = useState<string>('select');
+  const [activeTool, setActiveTool] = useState<string>('select'); // select, rect, circle
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -48,116 +48,68 @@ const BoardEditor: React.FC = () => {
     };
   }, [boardId]);
 
-  const addShape = (type: string) => {
-    if (!boardId) return;
-
-    const newElement = {
-      type,
-      x: 100 + Math.random() * 200,
-      y: 100 + Math.random() * 200,
-      width: 100,
-      height: 100,
-      fill: type === 'RECT' ? 'red' : 'blue',
-    };
-
-    // Optimistic update
-    // We don't have the ID yet, but we will get it from the server or refresh
-    // For smoother UX, in a real app we'd use a temp ID
-
-    // Send to server
-    socketRef.current?.emit('add-element', { boardId, element: newElement });
-  };
-
-  // Since we rely on the server to broadcast back (even to self? or just to others?)
-  // The server implementation: socket.to(boardId).emit(...) usually broadcasts to OTHERS.
-  // So the sender needs to add it locally themselves.
-  // Let's modify the addShape to add locally as well, but we need the ID.
-  // For this MVP, we will rely on a simplified flow:
-  // 1. Client emits 'add-element'
-  // 2. Client adds to local state optimistically (with temp ID) OR waits for ack?
-  // Let's modify the SERVER to emit to EVERYONE including sender for simplicity in this MVP?
-  // Or better: The server `io.to(boardId).emit` sends to everyone in room including sender?
-  // `socket.to(boardId)` sends to everyone EXCEPT sender.
-  // `io.in(boardId)` sends to everyone INCLUDING sender.
-
-  // Checking server code...
-  // server/src/index.ts uses: socket.to(boardId).emit('element-added', savedElement);
-  // This means the sender DOES NOT get the event.
-  // So the sender must add it locally.
-
-  // Let's wrap the emit in a function that also updates local state.
-
-  const handleStageClick = (e: any) => {
-    // If we were doing "click to add", we'd use this.
-    // For now, let's just use buttons to add shapes at random positions for the MVP.
-  };
-
   const handleAddRect = () => {
+      setActiveTool('rect');
       const element = {
           type: 'RECT',
-          x: Math.random() * 500,
-          y: Math.random() * 500,
-          width: 100,
+          x: Math.random() * (window.innerWidth - 200) + 100, // keep somewhat visible
+          y: Math.random() * (window.innerHeight - 200) + 100,
+          width: 150,
           height: 100,
-          fill: '#ef4444' // Tailwind red-500
+          fill: '#fca5a5' // Tailwind red-300
       };
-
-      // We need to persist this.
-      // Ideally we call the API to create it, then broadcast.
-      // BUT, we set up the socket to handle creation in the backend for us.
-      // So we emit, and we also need to add it locally.
-      // We won't have the real ID immediately unless we wait for a callback.
-      // For MVP, we'll just add it with a temp ID or re-fetch?
-      // Re-fetching is slow.
-      // Let's just add it locally with a temp ID.
-
-      const tempId = Math.random().toString();
-      const tempElement = { ...element, id: tempId };
-      setElements(prev => [...prev, tempElement]);
-
-      socketRef.current?.emit('add-element', { boardId, element });
+      addElement(element);
   };
 
   const handleAddCircle = () => {
+      setActiveTool('circle');
       const element = {
           type: 'CIRCLE',
-          x: Math.random() * 500,
-          y: Math.random() * 500,
-          width: 100, // For circle, we'll use width as radius * 2 roughly or just diameter
-          height: 100,
-          fill: '#3b82f6' // Tailwind blue-500
+          x: Math.random() * (window.innerWidth - 200) + 100,
+          y: Math.random() * (window.innerHeight - 200) + 100,
+          width: 120,
+          height: 120,
+          fill: '#93c5fd' // Tailwind blue-300
       };
+      addElement(element);
+  };
 
+  const addElement = (element: any) => {
       const tempId = Math.random().toString();
       const tempElement = { ...element, id: tempId };
       setElements(prev => [...prev, tempElement]);
-
       socketRef.current?.emit('add-element', { boardId, element });
   };
 
+  const handleStageClick = () => {
+    // Future: Use this for "Click to place" logic depending on activeTool
+  };
+
   return (
-    <div className="flex flex-col h-screen">
-       <div className="bg-white border-b px-6 py-3 flex items-center justify-between z-10 shadow-sm">
-          <h2 className="font-bold text-gray-800">Board Editor</h2>
-          <div className="flex gap-2">
-            <button
-                onClick={handleAddRect}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300 flex items-center gap-2"
+    <div className="flex flex-col h-screen bg-gray-100 overflow-hidden relative">
+       {/* Header */}
+       <div className="absolute top-4 left-4 z-20">
+            <Link
+                to="/dashboard"
+                className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 hover:shadow-md transition-all text-gray-700 font-medium"
             >
-                <div className="w-4 h-4 bg-red-500 rounded-sm"></div>
-                Rectangle
-            </button>
-             <button
-                onClick={handleAddCircle}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300 flex items-center gap-2"
-            >
-                <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-                Circle
-            </button>
-          </div>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Dashboard
+            </Link>
        </div>
 
-       <div className="flex-1 bg-gray-50 overflow-hidden">
+       {/* Canvas Area */}
+       <div className="flex-1 cursor-grab active:cursor-grabbing bg-gray-50 relative">
+         {/* Grid Pattern Background */}
+         <div className="absolute inset-0 opacity-10 pointer-events-none"
+              style={{
+                  backgroundImage: 'radial-gradient(#6366f1 1px, transparent 1px)',
+                  backgroundSize: '20px 20px'
+              }}>
+         </div>
+
          <Stage width={window.innerWidth} height={window.innerHeight} onClick={handleStageClick}>
             <Layer>
                 {elements.map((el, i) => {
@@ -170,8 +122,11 @@ const BoardEditor: React.FC = () => {
                                 width={el.width}
                                 height={el.height}
                                 fill={el.fill}
+                                cornerRadius={8}
                                 draggable
-                                shadowBlur={5}
+                                shadowBlur={10}
+                                shadowColor="rgba(0,0,0,0.15)"
+                                shadowOffset={{x: 2, y: 5}}
                             />
                         );
                     } else if (el.type === 'CIRCLE') {
@@ -183,7 +138,9 @@ const BoardEditor: React.FC = () => {
                                 radius={(el.width || 100) / 2}
                                 fill={el.fill}
                                 draggable
-                                shadowBlur={5}
+                                shadowBlur={10}
+                                shadowColor="rgba(0,0,0,0.15)"
+                                shadowOffset={{x: 2, y: 5}}
                             />
                         );
                     }
@@ -191,6 +148,36 @@ const BoardEditor: React.FC = () => {
                 })}
             </Layer>
          </Stage>
+       </div>
+
+       {/* Floating Toolbar */}
+       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+           <div className="flex items-center gap-2 px-2 py-2 bg-white rounded-full shadow-xl border border-gray-200">
+               <button
+                    onClick={() => setActiveTool('select')}
+                    className={`p-3 rounded-full transition-all ${activeTool === 'select' ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 text-gray-600'}`}
+                    title="Select Tool"
+               >
+                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                   </svg>
+               </button>
+               <div className="w-px h-8 bg-gray-200 mx-1"></div>
+               <button
+                    onClick={handleAddRect}
+                    className={`p-3 rounded-full transition-all ${activeTool === 'rect' ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 text-gray-600'}`}
+                    title="Rectangle"
+               >
+                   <div className="w-6 h-6 border-2 border-current rounded-sm"></div>
+               </button>
+               <button
+                    onClick={handleAddCircle}
+                    className={`p-3 rounded-full transition-all ${activeTool === 'circle' ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-gray-100 text-gray-600'}`}
+                    title="Circle"
+               >
+                   <div className="w-6 h-6 border-2 border-current rounded-full"></div>
+               </button>
+           </div>
        </div>
     </div>
   );

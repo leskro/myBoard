@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
+    "@tailwindcss/vite": "^4.1.17",
     "axios": "^1.13.2",
     "konva": "^10.0.12",
     "react": "^19.2.0",
