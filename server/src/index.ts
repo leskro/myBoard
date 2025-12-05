@@ -8,13 +8,22 @@ import jwt from 'jsonwebtoken';
 
 const app = express();
 const httpServer = createServer(app);
+
+// Use environment variable for CORS origin or default to *
+const corsOrigin = process.env.CORS_ORIGIN || '*';
+
 const io = new Server(httpServer, {
   cors: {
-    origin: '*', // Allow all origins for simplicity in MVP
+    origin: corsOrigin,
+    methods: ["GET", "POST"],
+    credentials: true
   },
 });
 
-app.use(cors());
+app.use(cors({
+  origin: corsOrigin,
+  credentials: true
+}));
 app.use(express.json());
 
 const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey';
@@ -137,6 +146,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });

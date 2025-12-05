@@ -4,7 +4,7 @@ import { Stage, Layer, Rect, Circle } from 'react-konva';
 import { io, Socket } from 'socket.io-client';
 import api from '../api';
 
-const SOCKET_URL = 'http://localhost:3000';
+const SOCKET_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
 
 interface BoardElement {
   id: string;
