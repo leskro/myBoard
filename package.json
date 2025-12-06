@@ -1,16 +1,34 @@
 {
-  "name": "myboard-monorepo",
+  "name": "temp_next_app",
+  "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "client",
-    "server"
-  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
-    "build": "npm run build --workspaces",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@liveblocks/client": "2.14",
+    "@liveblocks/react": "2.14",
+    "@liveblocks/react-ui": "2.14",
+    "clsx": "^2.1.1",
+    "konva": "^10.0.12",
+    "lucide-react": "^0.556.0",
+    "next": "^15.0.3",
+    "react": "^19.0.0-rc-66855b96-20241106",
+    "react-dom": "^19.0.0-rc-66855b96-20241106",
+    "react-konva": "^19.2.1",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.7",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

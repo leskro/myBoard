@@ -1,67 +1,36 @@
-# myBoard
-
-A real-time whiteboard collaboration tool (Miro clone) built with the MERN stack (well, PERN stack with Prisma/Postgres/SQLite).
-
-## Features
-
-- **Real-time Collaboration**: See shapes appear instantly on other screens using Socket.io.
-- **Board Editor**: Add Rectangles and Circles using Konva.js.
-- **Authentication**: Secure JWT-based login and registration.
-- **Dashboard**: Manage your boards.
-- **Teams**: (Database structure ready for teams).
-
-## Tech Stack
-
-- **Frontend**: React, Vite, TailwindCSS, React-Konva
-- **Backend**: Node.js, Express, Socket.io
-- **Database**: SQLite (Dev) / PostgreSQL (Prod), Prisma ORM
-- **Language**: TypeScript
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js (v18+)
-- NPM
-
-### Installation
-
-1.  Clone the repository.
-2.  Install dependencies for the monorepo:
-    ```bash
-    npm install
-    ```
-3.  Install dependencies for workspaces:
-    ```bash
-    cd client && npm install
-    cd ../server && npm install
-    ```
-
-### Running the App
-
-From the root directory, run:
+First, run the development server:
 
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-This will start:
-- Backend server on `http://localhost:3000`
-- Frontend client on `http://localhost:5173`
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### Database Setup
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-The project is configured to use SQLite by default for easy local development.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-```bash
-cd server
-npx prisma migrate dev --name init
-```
+## Learn More
 
-## Future Roadmap
+To learn more about Next.js, take a look at the following resources:
 
-- [ ] Text elements
-- [ ] Connectors/Arrows
-- [ ] Real-time cursors
-- [ ] Image upload
-- [ ] Team management UI
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

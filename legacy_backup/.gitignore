@@ -1,0 +1,19 @@
+# Node
+node_modules
+dist
+build
+.DS_Store
+*.log
+
+# Env
+.env
+
+# Database
+*.db
+*.sqlite
+server/prisma/dev.db
+server/prisma/dev.db-journal
+
+# Compiled JS in source (if any)
+server/src/*.js
+server/src/*.js.map
