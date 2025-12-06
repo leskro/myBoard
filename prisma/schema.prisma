@@ -1,0 +1,156 @@
+// 1. Configuration de la base de données
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Nécessaire pour Supabase en mode Serverless
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 2. Énumérations (Types fixes)
+// Les rôles dans une équipe
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// Les formats de tableaux supportés (ISO 216)
+// Note: Les enums ne peuvent pas commencer par un chiffre, d'où le préfixe "ISO_"
+enum BoardFormat {
+  ISO_A4
+  ISO_A3
+  ISO_A2
+  ISO_A1
+  ISO_A0
+  ISO_2A0
+  ISO_3A0
+}
+
+// 3. Modèles NextAuth (Obligatoires pour l'authentification)
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+
+  // Relations métier
+  teamMemberships TeamMember[] // Les équipes dont je fais partie
+  createdBoards   Board[]      // Les tableaux que j'ai créés (audit)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// 4. Modèles Métier (Votre SaaS)
+
+// Une Équipe (Espace de travail global)
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique // Utile pour les URLs ex: app.com/team-slug
+
+  members   TeamMember[]
+  projects  Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Table de liaison Utilisateur <-> Équipe avec Rôle
+model TeamMember {
+  id        String   @id @default(cuid())
+  role      TeamRole @default(MEMBER)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, teamId]) // Un user ne peut être qu'une fois dans une team
+  @@index([userId])
+  @@index([teamId])
+}
+
+// Un Projet (Conteneur de tableaux)
+model Project {
+  id          String   @id @default(cuid())
+  name        String   // Règle métier : Non éditable après création (géré par l'API)
+  description String?
+
+  teamId      String
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  boards      Board[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([teamId])
+}
+
+// Le Tableau (Board)
+model Board {
+  id          String      @id @default(cuid())
+  title       String
+  format      BoardFormat @default(ISO_A3) // Format papier par défaut
+
+  // Optionnel : Snapshot des données (JSON) si on veut sauvegarder un état fixe hors de Liveblocks
+  // Mais la source de vérité temps réel reste Liveblocks.
+  thumbnailUrl String?    // URL de l'image de prévisualisation (stockée sur Supabase Storage)
+
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  creatorId   String
+  creator     User        @relation(fields: [creatorId], references: [id])
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([projectId])
+}
